@@ -1,0 +1,14 @@
+water-monthly/
+│
+├── docs/
+│   ├── index.html
+│   ├── index.json
+│
+├── incoming/
+│   └── (later you put lakes_YYYY-MM.zip here)
+│
+├── .github/
+│   └── workflows/
+│       └── build-and-deploy.yml
+│
+├── README.md
