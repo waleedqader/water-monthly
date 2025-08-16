@@ -1,0 +1,17 @@
+<!doctype html>
+<html><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Water Surfaces (Monthly)</title>
+<link href="https://unpkg.com/maplibre-gl@3.7.1/dist/maplibre-gl.css" rel="stylesheet"/>
+<style>html,body,#map{height:100%;margin:0}</style>
+</head><body>
+<div id="map"></div>
+<script src="https://unpkg.com/maplibre-gl@3.7.1/dist/maplibre-gl.js"></script>
+<script>
+const map=new maplibregl.Map({container:'map',style:{version:8,sources:{osm:{type:'raster',tiles:['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],tileSize:256,attribution:'&copy; OpenStreetMap contributors'}},layers:[{id:'osm',type:'raster',source:'osm'}]},center:[44,34],zoom:5});
+async function load(){const r=await fetch('./index.json?_='+Date.now());const d=await r.json();const m=d.months||[];if(!m.length)return;const latest=m[m.length-1];show(latest)}
+async function show(e){const idS='lakes';if(map.getSource(idS))map.removeSource(idS);map.addSource(idS,{type:'vector',tiles:['./'+e.path+'/{z}/{x}/{y}.pbf'],minzoom:5,maxzoom:14});map.addLayer({id:'lakes-fill',type:'fill',source:idS,'source-layer':'lakes',paint:{'fill-color':'#1e90ff','fill-opacity':0.35}});map.addLayer({id:'lakes-line',type:'line',source:idS,'source-layer':'lakes',paint:{'line-color':'#1e90ff','line-width':1.2}});}
+load();
+</script>
+</body></html>
