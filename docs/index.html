@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Water Surfaces (Monthly)</title>
+<link href="https://unpkg.com/maplibre-gl@3.7.1/dist/maplibre-gl.css" rel="stylesheet"/>
+<style>
+  html,body,#map{height:100%;margin:0}
+  .topbar{position:absolute;top:10px;left:10px;z-index:2;background:#fff;opacity:.95;
+    padding:8px 10px;border-radius:10px;font-family:system-ui;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="topbar">Month:
+  <select id="month"></select>
+  <span id="status" style="margin-left:8px;color:#888;"></span>
+</div>
+
+<script src="https://unpkg.com/maplibre-gl@3.7.1/dist/maplibre-gl.js"></script>
+<script>
+const map = new maplibregl.Map({
+  container: 'map',
+  style: {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '&copy; OpenStreetMap contributors'
+      }
+    },
+    layers: [{ id: 'osm', type: 'raster', source: 'osm' }]
+  },
+  center: [44, 34], zoom: 5
+});
+map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+async function loadIndex(){
+  const r = await fetch('./index.json?_=' + Date.now());
+  const data = await r.json();
+  const months = (data.months||[]).sort((a,b)=>a.month.localeCompare(b.month));
+  const sel = document.getElementById('month'), status=document.getElementById('status');
+  sel.innerHTML='';
+  if(!months.length){ status.textContent='(no data yet)'; return; }
+  months.forEach(m=>{ const o=document.createElement('option'); o.value=m.path; o.textContent=m.month; sel.appendChild(o); });
+  sel.value = months[months.length-1].path;
+  status.textContent = 'latest: ' + months[months.length-1].month;
+  sel.onchange = ()=> show(sel.value);
+  show(sel.value);
+}
+let currentLayerId = null;
+async function show(path){
+  const id = 'lakes';
+  if(currentLayerId){ map.removeLayer(currentLayerId); map.removeSource(id); }
+  map.addSource(id, { type:'geojson', data:'./'+path });
+  map.addLayer({ id:'lakes-fill', type:'fill', source:id, paint:{ 'fill-color':'#1e90ff', 'fill-opacity':0.35 }});
+  map.addLayer({ id:'lakes-outline', type:'line', source:id, paint:{ 'line-color':'#1e90ff', 'line-width':1.2 }});
+  currentLayerId = 'lakes-outline';
+  try{
+    const gj = await (await fetch('./'+path)).json();
+    const b = bounds(gj); if(b) map.fitBounds(b, {padding:40, duration:700});
+  }catch(_){}
+}
+function bounds(gj){
+  let w= 180, s= 90, e=-180, n=-90, found=false;
+  function ext(coord){ const [x,y] = coord; if(x<w)w=x; if(x>e)e=x; if(y<s)s=y; if(y>n)n=y; found=true; }
+  function walk(g){
+    if(g.type==='Point') ext(g.coordinates);
+    else if(g.type==='MultiPoint'||g.type==='LineString') g.coordinates.forEach(ext);
+    else if(g.type==='MultiLineString'||g.type==='Polygon') g.coordinates.flat(2).forEach(ext);
+    else if(g.type==='MultiPolygon') g.coordinates.flat(3).forEach(ext);
+    else if(g.type==='Feature') walk(g.geometry);
+    else if(g.type==='FeatureCollection') g.features.forEach(f=>walk(f.geometry));
+  }
+  walk(gj); return found?[[w,s],[e,n]]:null;
+}
+loadIndex();
+</script>
+</body>
+</html>
