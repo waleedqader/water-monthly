@@ -1,0 +1,12 @@
+setting,lead,model,NSE,NSE_sd,n
+climate_only_absolute,0,RF,-0.77,1.05,281
+climate_only_absolute,0,XGB,-0.83,1.0,281
+forecast,1,RF,0.85,0.05,277
+forecast,1,XGB,0.85,0.05,277
+forecast,1,Persistence,0.8,0.09,277
+forecast,2,RF,0.65,0.12,276
+forecast,2,XGB,0.65,0.12,276
+forecast,2,Persistence,0.45,0.23,276
+forecast,3,RF,0.52,0.14,275
+forecast,3,XGB,0.48,0.17,275
+forecast,3,Persistence,-0.05,0.46,275
